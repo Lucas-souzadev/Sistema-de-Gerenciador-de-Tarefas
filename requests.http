@@ -1,0 +1,101 @@
+# Exemplos para a extensão "REST Client" do VS Code (clique em "Send Request" acima de cada bloco).
+# Passos: 1) cadastrar  2) login  3) copiar o "token" da resposta para @token  4) testar o resto.
+
+@baseUrl = http://localhost:3000
+@token = COLE_O_TOKEN_AQUI
+@projetoId = COLE_O_ID_DO_PROJETO
+@tarefaId = COLE_O_ID_DA_TAREFA
+
+### 1. Cadastro (mesmo mandando perfil ADMIN, vira USER)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{ "nome": "João", "email": "joao@email.com", "senha": "123456", "perfil": "ADMIN" }
+
+### 2. Login de usuário comum
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "joao@email.com", "senha": "123456" }
+
+### 2b. Login do ADMIN (dados do .env)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@exemplo.com", "senha": "Admin@123" }
+
+### Listar usuários (só ADMIN: com token de USER dá 403)
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### Criar projeto
+POST {{baseUrl}}/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Faculdade", "descricao": "Trabalhos do semestre" }
+
+### Listar meus projetos
+GET {{baseUrl}}/projects
+Authorization: Bearer {{token}}
+
+### Atualizar projeto
+PUT {{baseUrl}}/projects/{{projetoId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Faculdade 2026.2", "descricao": "Trabalhos e provas" }
+
+### Criar tarefa
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "titulo": "Entregar a API", "descricao": "Atividade de API e Web Services", "prioridade": "ALTA", "prazo": "2026-12-31", "projetoId": "{{projetoId}}" }
+
+### REGRA 1: prazo no passado (deve dar 400)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "titulo": "Tarefa antiga", "prazo": "2020-01-01", "projetoId": "{{projetoId}}" }
+
+### Listar minhas tarefas
+GET {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+
+### Consulta com relacionamento: projeto + suas tarefas
+GET {{baseUrl}}/projects/{{projetoId}}/tasks
+Authorization: Bearer {{token}}
+
+### Atualizar tarefa
+PUT {{baseUrl}}/tasks/{{tarefaId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "titulo": "Entregar a API (revisada)", "prioridade": "MEDIA" }
+
+### Mudar status para EM_ANDAMENTO
+PATCH {{baseUrl}}/tasks/{{tarefaId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "status": "EM_ANDAMENTO" }
+
+### Mudar status para CONCLUIDA (depois disso não muda mais: REGRA 2 -> 409)
+PATCH {{baseUrl}}/tasks/{{tarefaId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "status": "CONCLUIDA" }
+
+### REGRA 3: excluir projeto com tarefa não concluída (deve dar 409)
+DELETE {{baseUrl}}/projects/{{projetoId}}
+Authorization: Bearer {{token}}
+
+### Excluir tarefa
+DELETE {{baseUrl}}/tasks/{{tarefaId}}
+Authorization: Bearer {{token}}
+
+### Sem token (deve dar 401)
+GET {{baseUrl}}/projects
